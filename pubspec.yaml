@@ -30,6 +30,8 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  flutter_web_plugins:
+      sdk: flutter
   provider: any
   go_router: any
   flutter_animate: any
@@ -37,8 +39,12 @@ dependencies:
   path_provider: any
   path: any
   google_fonts: any
+  flutter_map: ^7.0.2
+  latlong2: any
+  flutter_map_cancellable_tile_provider: ^3.0.2
+  
 dev_dependencies:
-  build_runner: ^2.4.11
+  build_runner: ^2.4.13
   flutter_driver:
     sdk: flutter
     
