@@ -34,14 +34,11 @@ dependencies:
       sdk: flutter
   provider: any
   go_router: any
-  flutter_animate: any
   http: any
-  path_provider: any
-  path: any
-  google_fonts: any
   flutter_map: ^7.0.2
   latlong2: any
   flutter_map_cancellable_tile_provider: ^3.0.2
+  idb_shim: any
   
 dev_dependencies:
   build_runner: ^2.4.13
@@ -70,9 +67,8 @@ flutter:
   uses-material-design: true
 
   # To add assets to your application, add an assets section, like this:
-  assets:
-     - assets/images/
-     - assets/fonts/
+#  assets:
+#     - assets/fonts/
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/assets-and-images/#resolution-aware
@@ -85,13 +81,13 @@ flutter:
   # "family" key with the font family name, and a "fonts" key with a
   # list giving the asset and other descriptors for the font. For
   # example:
-  fonts:
-     - family: Roboto
-       fonts:
-         - asset: assets/fonts/Roboto-ThinItalic.ttf
-           weight: 100 
-         - asset: assets/fonts/Roboto-BoldItalic.ttf
-           style: italic  
+#  fonts:
+#     - family: Roboto
+#       fonts:
+#         - asset: assets/fonts/Roboto-ThinItalic.ttf
+#           weight: 100 
+#         - asset: assets/fonts/Roboto-BoldItalic.ttf
+#           style: italic  
   #
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/custom-fonts/#from-packages

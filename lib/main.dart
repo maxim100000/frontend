@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_web_plugins/flutter_web_plugins.dart';
@@ -5,9 +7,13 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:flutter_map_cancellable_tile_provider/flutter_map_cancellable_tile_provider.dart';
 import 'package:http/http.dart';
+import 'package:idb_shim/idb_browser.dart';
 
-void main() {
+void main() async {
   usePathUrlStrategy();
+  WidgetsFlutterBinding.ensureInitialized();
+  await deleteDatabase();
+  await initializeDatabase();
   runApp(const MyApp());
 }
 
@@ -18,7 +24,6 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp.router(
       debugShowCheckedModeBanner: false,
-      title: 'Flutter Demo',
       routerConfig: _router,
     );
   }
@@ -42,23 +47,35 @@ class MyHomePage extends StatelessWidget {
                   children: [
                     Padding(
                       padding: const EdgeInsets.only(left: 15.0),
-                      child: FractionallySizedBox(
-                        widthFactor: 0.6,
-                        child: SizedBox(
-                          height: 70,
-                          child: Row(
-                            crossAxisAlignment: CrossAxisAlignment.center,
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              ElevatedButton(
-                                  onPressed: () {}, child: const Text('Домой')),
-                              ElevatedButton(
-                                  onPressed: () {
-                                    context.go('/about');
-                                  },
-                                  child: const Text('О нас'))
-                            ],
-                          ),
+                      child: SizedBox(
+                        height: 70,
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            const ElevatedButton(
+                                onPressed: null,
+                                style: ButtonStyle(
+                                    elevation: WidgetStatePropertyAll(3),
+                                    shape: WidgetStatePropertyAll(
+                                        RoundedRectangleBorder(
+                                            borderRadius: BorderRadius.all(
+                                      Radius.circular(3),
+                                    )))),
+                                child: Text('Домой')),
+                            ElevatedButton(
+                                style: const ButtonStyle(
+                                    elevation: WidgetStatePropertyAll(3),
+                                    shape: WidgetStatePropertyAll(
+                                        RoundedRectangleBorder(
+                                            borderRadius: BorderRadius.all(
+                                      Radius.circular(3),
+                                    )))),
+                                onPressed: () {
+                                  context.go('/about');
+                                },
+                                child: const Text('О нас'))
+                          ],
                         ),
                       ),
                     ),
@@ -94,9 +111,21 @@ class MyHomePage extends StatelessWidget {
                                     width: 150,
                                     child: ElevatedButton(
                                         style: const ButtonStyle(
-                                          elevation: WidgetStatePropertyAll(3),
-                                        ),
-                                        onPressed: () {},
+                                            elevation:
+                                                WidgetStatePropertyAll(3),
+                                            shape: WidgetStatePropertyAll(
+                                                RoundedRectangleBorder(
+                                                    borderRadius:
+                                                        BorderRadius.all(
+                                                            Radius.circular(
+                                                                3))))),
+                                        onPressed: () {
+                                          showDialog(
+                                            context: context,
+                                            builder: (context) =>
+                                                const Dialog(),
+                                          );
+                                        },
                                         child: const Text('Получить')),
                                   ),
                                 ),
@@ -107,7 +136,13 @@ class MyHomePage extends StatelessWidget {
                                     child: ElevatedButton(
                                         style: const ButtonStyle(
                                             elevation:
-                                                WidgetStatePropertyAll(3)),
+                                                WidgetStatePropertyAll(3),
+                                            shape: WidgetStatePropertyAll(
+                                                RoundedRectangleBorder(
+                                                    borderRadius:
+                                                        BorderRadius.all(
+                                                            Radius.circular(
+                                                                3))))),
                                         onPressed: () {},
                                         child: const Text('Отправить')),
                                   ),
@@ -121,38 +156,32 @@ class MyHomePage extends StatelessWidget {
                   ],
                 ),
               ),
-              Column(
-                children: [
-                  const SizedBox(
-                    height: 70,
-                  ),
-                  Expanded(
-                    flex: 5,
-                    child: Padding(
-                      padding: const EdgeInsets.only(right: 15.0),
-                      child: ListView.builder(
-                        itemBuilder: (context, index) {
-                          return SizedBox(
-                            height: 150,
-                            child: Card(
-                                elevation: 3,
-                                child: ListTile(
-                                  leading: CircleAvatar(
-                                    backgroundColor: Colors.red,
-                                    child: Text('${index + 1}'),
-                                  ),
-                                  title: Text('Item ${index + 1}'),
-                                  subtitle: Text('Item ${index + 1}'),
-                                )),
-                          );
-                        },
+              Expanded(
+                child: Column(
+                  children: [
+                    const SizedBox(
+                      height: 70,
+                    ),
+                    Flexible(
+                      flex: 5,
+                      child: Padding(
+                        padding: const EdgeInsets.only(right: 15.0),
+                        child: ListView.builder(
+                          itemBuilder: (context, index) {
+                            return SizedBox(
+                              height: 150,
+                              child: Card(
+                                  elevation: 3, child: Center(child: Text(''))),
+                            );
+                          },
+                        ),
                       ),
                     ),
-                  ),
-                  const SizedBox(
-                    height: 90,
-                  )
-                ],
+                    const SizedBox(
+                      height: 90,
+                    )
+                  ],
+                ),
               ),
             ],
           ),
@@ -180,35 +209,53 @@ class ListOfCitates extends StatelessWidget {
     return Scaffold(
       body: Column(
         children: [
-          const SizedBox(
-            height: 70,
-          ),
           Expanded(
             flex: 5,
             child: Padding(
               padding: const EdgeInsets.only(right: 15.0),
-              child: ListView.builder(
-                itemBuilder: (context, index) {
-                  return SizedBox(
-                    height: 150,
-                    child: Card(
-                        elevation: 3,
-                        child: ListTile(
-                          leading: CircleAvatar(
-                            backgroundColor: Colors.red,
-                            child: Text('${index + 1}'),
+              child: FutureBuilder(
+                future: getAllRecords(),
+                builder: (context, snapshot) {
+                  if (snapshot.hasData) {
+                    return ListView.builder(
+                      itemCount: snapshot.data!.length,
+                      itemBuilder: (context, index) {
+                        return Dismissible(
+                          onDismissed: (direction) {
+                            if (direction == DismissDirection.endToStart) {
+                              deleteLocalRecord(snapshot.data![index]['id']);
+                            } else if (direction ==
+                                DismissDirection.startToEnd) {
+                              deleteLocalAndGlobalRecord(
+                                  snapshot.data![index]['id']);
+                            }
+                          },
+                          key: ValueKey(snapshot.data![index]['id']),
+                          direction: DismissDirection.horizontal,
+                          background: Container(
+                            decoration: const BoxDecoration(
+                                shape: BoxShape.rectangle,
+                                color: Colors.red,
+                                borderRadius:
+                                    BorderRadius.all(Radius.circular(3))),
                           ),
-                          title: Text('Item ${index + 1}'),
-                          subtitle: Text('Item ${index + 1}'),
-                        )),
-                  );
+                          child: SizedBox(
+                            height: 150,
+                            child: Card(
+                                elevation: 3,
+                                child: Center(
+                                    child: Text(
+                                        snapshot.data![index]['content']))),
+                          ),
+                        );
+                      },
+                    );
+                  }
+                  return const Center(child: CircularProgressIndicator());
                 },
               ),
             ),
           ),
-          const SizedBox(
-            height: 90,
-          )
         ],
       ),
     );
@@ -234,9 +281,26 @@ class TextArea extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.center,
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
+                    const ElevatedButton(
+                        style: ButtonStyle(
+                            elevation: WidgetStatePropertyAll(3),
+                            shape: WidgetStatePropertyAll(
+                              RoundedRectangleBorder(
+                                borderRadius:
+                                    BorderRadius.all(Radius.circular(3)),
+                              ),
+                            )),
+                        onPressed: null,
+                        child: Text('Домой')),
                     ElevatedButton(
-                        onPressed: () {}, child: const Text('Домой')),
-                    ElevatedButton(
+                        style: const ButtonStyle(
+                            elevation: WidgetStatePropertyAll(3),
+                            shape: WidgetStatePropertyAll(
+                              RoundedRectangleBorder(
+                                borderRadius:
+                                    BorderRadius.all(Radius.circular(3)),
+                              ),
+                            )),
                         onPressed: () {
                           context.go('/about');
                         },
@@ -277,9 +341,43 @@ class TextArea extends StatelessWidget {
                           width: 150,
                           child: ElevatedButton(
                               style: const ButtonStyle(
-                                elevation: WidgetStatePropertyAll(3),
-                              ),
-                              onPressed: () {},
+                                  elevation: WidgetStatePropertyAll(3),
+                                  shape: WidgetStatePropertyAll(
+                                    RoundedRectangleBorder(
+                                      borderRadius:
+                                          BorderRadius.all(Radius.circular(3)),
+                                    ),
+                                  )),
+                              onPressed: () {
+                                showDialog(
+                                  context: context,
+                                  builder: (context) {
+                                    return AlertDialog(
+                                      shape: const RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.all(
+                                              Radius.circular(3))),
+                                      content: FutureBuilder(
+                                        future: getJsonData(),
+                                        builder: (context, snapshot) {
+                                          if (snapshot.connectionState ==
+                                              ConnectionState.waiting) {
+                                            return const CircularProgressIndicator();
+                                          } else if (snapshot.hasError) {
+                                            return const Text(
+                                                'Нет новых цитат');
+                                          }
+                                          return Padding(
+                                            padding: const EdgeInsets.all(8.0),
+                                            child: Text(jsonDecode(
+                                                snapshot.data!)['content']),
+                                          );
+                                        },
+                                      ),
+                                      elevation: 3,
+                                    );
+                                  },
+                                );
+                              },
                               child: const Text('Получить')),
                         ),
                       ),
@@ -290,7 +388,11 @@ class TextArea extends StatelessWidget {
                           padding: const EdgeInsets.only(right: 15.0),
                           child: ElevatedButton(
                               style: const ButtonStyle(
-                                  elevation: WidgetStatePropertyAll(3)),
+                                  elevation: WidgetStatePropertyAll(3),
+                                  shape: WidgetStatePropertyAll(
+                                      RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.all(
+                                              Radius.circular(3))))),
                               onPressed: () {},
                               child: const Text('Отправить')),
                         ),
@@ -326,18 +428,35 @@ class MapView extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     ElevatedButton(
+                        style: const ButtonStyle(
+                            elevation: WidgetStatePropertyAll(3),
+                            shape:
+                                WidgetStatePropertyAll(RoundedRectangleBorder(
+                              borderRadius:
+                                  BorderRadius.all(Radius.circular(3)),
+                            ))),
                         onPressed: () {
                           context.go('/');
                         },
                         child: const Text('Домой')),
-                    ElevatedButton(onPressed: () {}, child: const Text('О нас'))
+                    const ElevatedButton(
+                        style: ButtonStyle(
+                            elevation: WidgetStatePropertyAll(3),
+                            shape:
+                                WidgetStatePropertyAll(RoundedRectangleBorder(
+                              borderRadius:
+                                  BorderRadius.all(Radius.circular(3)),
+                            ))),
+                        onPressed: null,
+                        child: Text('О нас'))
                   ],
                 ),
               ),
             ),
           ),
           Expanded(
-            child: Container(margin: const EdgeInsets.all(15), child: const MapScreen()),
+            child: Container(
+                margin: const EdgeInsets.all(15), child: const MapScreen()),
           )
         ],
       ),
@@ -414,4 +533,93 @@ final _router = GoRouter(
   ],
 );
 
-Future<Response> getJsonData() async => get(Uri.parse('https://jsonplaceholder.typicode.com/posts'));
+Future<String> getJsonData() async {
+  Response response = await get(Uri.http('127.0.0.1:8000', '/api/prophecy'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Basic YWRtaW46YWRtaW4='
+      });
+  String data = utf8.decode(response.bodyBytes);
+  int id = jsonDecode(data)['id'];
+  await addData(id, jsonDecode(data));
+  return data;
+}
+
+Future<void> deleteLocalAndGlobalRecord(int id) async {
+  final dbFactory = getIdbFactory();
+  final db = await dbFactory?.open('my_database');
+  final txn = db?.transaction('my_store', 'readwrite');
+  final store = txn?.objectStore('my_store');
+
+  await store?.delete(id);
+  await txn?.completed;
+
+  await delete(
+    Uri.http('127.0.0.1:8000', '/api/prophecy/$id'),
+    headers: {'Authorization': 'Basic YWRtaW46YWRtaW4='},
+  );
+}
+
+Future<void> deleteLocalRecord(int id) async {
+  final dbFactory = getIdbFactory();
+  final db = await dbFactory?.open('my_database');
+  final txn = db?.transaction('my_store', 'readwrite');
+  final store = txn?.objectStore('my_store');
+
+  await store?.delete(id);
+  await txn?.completed;
+
+  await patch(
+    Uri.http('127.0.0.1:8000', '/api/prophecy/$id'),
+    headers: {'Authorization': 'Basic YWRtaW46YWRtaW4='},
+  );
+}
+
+Future<void> initializeDatabase() async {
+  // Название базы данных
+  const dbName = 'my_database';
+
+  // Версия базы данных
+  const dbVersion = 1;
+
+  // Открываем или создаем базу данных
+  final dbFactory = getIdbFactory(); // Получаем фабрику для IndexedDB
+  await dbFactory?.open(dbName, version: dbVersion,
+      onUpgradeNeeded: (VersionChangeEvent event) {
+    // Создаем хранилище, если база данных обновляется
+    final db = event.database;
+    if (!db.objectStoreNames.contains('my_store')) {
+      db.createObjectStore('my_store');
+    }
+  });
+}
+
+Future<void> addData(int id, Map<String, dynamic> value) async {
+  final dbFactory = getIdbFactory();
+  final db = await dbFactory?.open('my_database');
+  final txn = db?.transaction('my_store', 'readwrite');
+  final store = txn?.objectStore('my_store');
+
+  await store?.put(value, id);
+  await txn?.completed;
+}
+
+Future<List<Map<String, dynamic>>> getAllRecords() async {
+  final dbFactory = getIdbFactory();
+
+  final db = await dbFactory!.open('my_database');
+
+  final txn = db.transaction('my_store', 'readonly');
+  final store = txn.objectStore('my_store');
+
+  final records = await store.getAll();
+
+  await txn.completed;
+
+  return records.map((e) => e as Map<String, dynamic>).toList();
+}
+
+Future<void> deleteDatabase() async {
+  final dbFactory = getIdbFactory();
+  await dbFactory?.deleteDatabase('my_database');
+}
