@@ -12,7 +12,6 @@ import 'package:idb_shim/idb_browser.dart';
 void main() async {
   usePathUrlStrategy();
   WidgetsFlutterBinding.ensureInitialized();
-  await deleteDatabase();
   await initializeDatabase();
   runApp(const MyApp());
 }
@@ -23,16 +22,42 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp.router(
+      theme: ThemeData(
+          scrollbarTheme: const ScrollbarThemeData(
+        thumbColor: WidgetStatePropertyAll(Colors.greenAccent),
+      )),
       debugShowCheckedModeBanner: false,
       routerConfig: _router,
     );
   }
 }
 
-class MyHomePage extends StatelessWidget {
+class MyHomePage extends StatefulWidget {
   const MyHomePage({super.key, required this.title});
 
   final String title;
+
+  @override
+  State<MyHomePage> createState() => _MyHomePageState();
+}
+
+class _MyHomePageState extends State<MyHomePage> {
+  late ScrollController scrollController;
+  late ScrollController scrollController2;
+
+  @override
+  initState() {
+    super.initState();
+    scrollController = ScrollController();
+    scrollController2 = ScrollController();
+  }
+  
+  @override
+  void dispose() {
+    scrollController.dispose();
+    scrollController2.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -41,120 +66,8 @@ class MyHomePage extends StatelessWidget {
         return Scaffold(
           body: Row(
             children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.only(left: 15.0),
-                      child: SizedBox(
-                        height: 70,
-                        child: Row(
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            const ElevatedButton(
-                                onPressed: null,
-                                style: ButtonStyle(
-                                    elevation: WidgetStatePropertyAll(3),
-                                    shape: WidgetStatePropertyAll(
-                                        RoundedRectangleBorder(
-                                            borderRadius: BorderRadius.all(
-                                      Radius.circular(3),
-                                    )))),
-                                child: Text('Домой')),
-                            ElevatedButton(
-                                style: const ButtonStyle(
-                                    elevation: WidgetStatePropertyAll(3),
-                                    shape: WidgetStatePropertyAll(
-                                        RoundedRectangleBorder(
-                                            borderRadius: BorderRadius.all(
-                                      Radius.circular(3),
-                                    )))),
-                                onPressed: () {
-                                  context.go('/about');
-                                },
-                                child: const Text('О нас'))
-                          ],
-                        ),
-                      ),
-                    ),
-                    const Expanded(
-                      flex: 4,
-                      child: Padding(
-                        padding: EdgeInsets.only(left: 15, right: 15),
-                        child: TextField(
-                          textAlignVertical: TextAlignVertical.top,
-                          decoration: InputDecoration(
-                              border: OutlineInputBorder(
-                                  borderRadius:
-                                      BorderRadius.all(Radius.circular(2)))),
-                          maxLines: null,
-                          expands: true,
-                        ),
-                      ),
-                    ),
-                    SizedBox(
-                      height: 90,
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Expanded(
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              crossAxisAlignment: CrossAxisAlignment.end,
-                              children: [
-                                Padding(
-                                  padding: const EdgeInsets.only(left: 15.0),
-                                  child: SizedBox(
-                                    height: 50,
-                                    width: 150,
-                                    child: ElevatedButton(
-                                        style: const ButtonStyle(
-                                            elevation:
-                                                WidgetStatePropertyAll(3),
-                                            shape: WidgetStatePropertyAll(
-                                                RoundedRectangleBorder(
-                                                    borderRadius:
-                                                        BorderRadius.all(
-                                                            Radius.circular(
-                                                                3))))),
-                                        onPressed: () {
-                                          showDialog(
-                                            context: context,
-                                            builder: (context) =>
-                                                const Dialog(),
-                                          );
-                                        },
-                                        child: const Text('Получить')),
-                                  ),
-                                ),
-                                SizedBox(
-                                  width: 150,
-                                  child: Padding(
-                                    padding: const EdgeInsets.only(right: 15.0),
-                                    child: ElevatedButton(
-                                        style: const ButtonStyle(
-                                            elevation:
-                                                WidgetStatePropertyAll(3),
-                                            shape: WidgetStatePropertyAll(
-                                                RoundedRectangleBorder(
-                                                    borderRadius:
-                                                        BorderRadius.all(
-                                                            Radius.circular(
-                                                                3))))),
-                                        onPressed: () {},
-                                        child: const Text('Отправить')),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
+              const Expanded(
+                child: TextArea(),
               ),
               Expanded(
                 child: Column(
@@ -162,17 +75,125 @@ class MyHomePage extends StatelessWidget {
                     const SizedBox(
                       height: 70,
                     ),
-                    Flexible(
+                    const Padding(
+                      padding: EdgeInsets.only(right: 15.0, left: 5),
+                      child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(Icons.keyboard_double_arrow_left),
+                                Text(
+                                  'Swipe to delete locally',
+                                  style: TextStyle(fontSize: 10),
+                                ),
+                              ],
+                            ),
+                            Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  'Swipe also to delete globally',
+                                  style: TextStyle(fontSize: 10),
+                                ),
+                                Icon(Icons.keyboard_double_arrow_right),
+                              ],
+                            ),
+                          ]),
+                    ),
+                    Expanded(
                       flex: 5,
                       child: Padding(
-                        padding: const EdgeInsets.only(right: 15.0),
-                        child: ListView.builder(
-                          itemBuilder: (context, index) {
-                            return SizedBox(
-                              height: 150,
-                              child: Card(
-                                  elevation: 3, child: Center(child: Text(''))),
-                            );
+                        padding: const EdgeInsets.symmetric(horizontal: 5.0),
+                        child: FutureBuilder(
+                          future: getAllRecords(),
+                          builder: (context, snapshot) {
+                            if (snapshot.hasData) {
+                              return Scrollbar(
+                                controller: scrollController2,
+                                thumbVisibility: true,
+                                interactive: true,
+                                child: ListView.builder(
+                                  controller: scrollController2,
+                                  itemCount: snapshot.data!.length,
+                                  itemBuilder: (context, index) {
+                                    return Dismissible(
+                                      onDismissed: (direction) {
+                                        if (direction ==
+                                            DismissDirection.endToStart) {
+                                          deleteLocalRecord(
+                                              snapshot.data![index]['id']);
+                                        } else if (direction ==
+                                            DismissDirection.startToEnd) {
+                                          deleteLocalAndGlobalRecord(
+                                              snapshot.data![index]['id']);
+                                        }
+                                      },
+                                      key:
+                                          ValueKey(snapshot.data![index]['id']),
+                                      direction: DismissDirection.horizontal,
+                                      background: Container(
+                                        decoration: const BoxDecoration(
+                                            shape: BoxShape.rectangle,
+                                            color: Colors.red,
+                                            borderRadius: BorderRadius.all(
+                                                Radius.circular(3))),
+                                      ),
+                                      child: SizedBox(
+                                          height: 200,
+                                          child: Card(
+                                              margin: const EdgeInsets.only(
+                                                  left: 5,
+                                                  right: 10,
+                                                  bottom: 5,
+                                                  top: 5),
+                                              elevation: 5,
+                                              child: snapshot
+                                                          .data![index]
+                                                              ['content']
+                                                          .length >
+                                                      250
+                                                  ? Scrollbar(
+                                                      controller:
+                                                          scrollController,
+                                                      interactive: true,
+                                                      thumbVisibility: true,
+                                                      child: ListView(
+                                                        controller:
+                                                            scrollController,
+                                                        children: [
+                                                          Center(
+                                                              child:
+                                                                  Padding(
+                                                            padding:
+                                                                const EdgeInsets
+                                                                    .all(
+                                                                    10.0),
+                                                            child: Text(snapshot
+                                                                        .data![
+                                                                    index][
+                                                                'content']),
+                                                          ))
+                                                        ],
+                                                      ),
+                                                    )
+                                                  : Center(
+                                                      child: Padding(
+                                                      padding:
+                                                          const EdgeInsets
+                                                              .all(10.0),
+                                                      child: Text(snapshot
+                                                              .data![index]
+                                                          ['content']),
+                                                    )))),
+                                    );
+                                  },
+                                ),
+                              );
+                            }
+                            return const Center(
+                                child: CircularProgressIndicator());
                           },
                         ),
                       ),
@@ -199,56 +220,144 @@ class MyHomePage extends StatelessWidget {
   }
 }
 
-class ListOfCitates extends StatelessWidget {
+class ListOfCitates extends StatefulWidget {
   const ListOfCitates({
     super.key,
   });
 
   @override
+  State<ListOfCitates> createState() => _ListOfCitatesState();
+}
+
+class _ListOfCitatesState extends State<ListOfCitates> {
+  late ScrollController scrollController;
+  late ScrollController scrollController2;
+
+  @override
+  void initState() {
+    super.initState();
+    scrollController = ScrollController();
+    scrollController2 = ScrollController();
+  }
+
+  @override
+  dispose() {
+    scrollController.dispose();
+    scrollController2.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: Column(
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 20.0),
+            child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.keyboard_double_arrow_left),
+                      Text(
+                        'Swipe to delete locally',
+                        style: TextStyle(fontSize: 10),
+                      ),
+                    ],
+                  ),
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        'Swipe also to delete globally',
+                        style: TextStyle(fontSize: 10),
+                      ),
+                      Icon(Icons.keyboard_double_arrow_right),
+                    ],
+                  ),
+                ]),
+          ),
           Expanded(
             flex: 5,
             child: Padding(
-              padding: const EdgeInsets.only(right: 15.0),
+              padding: const EdgeInsets.symmetric(horizontal: 5.0),
               child: FutureBuilder(
                 future: getAllRecords(),
                 builder: (context, snapshot) {
                   if (snapshot.hasData) {
-                    return ListView.builder(
-                      itemCount: snapshot.data!.length,
-                      itemBuilder: (context, index) {
-                        return Dismissible(
-                          onDismissed: (direction) {
-                            if (direction == DismissDirection.endToStart) {
-                              deleteLocalRecord(snapshot.data![index]['id']);
-                            } else if (direction ==
-                                DismissDirection.startToEnd) {
-                              deleteLocalAndGlobalRecord(
-                                  snapshot.data![index]['id']);
-                            }
-                          },
-                          key: ValueKey(snapshot.data![index]['id']),
-                          direction: DismissDirection.horizontal,
-                          background: Container(
-                            decoration: const BoxDecoration(
-                                shape: BoxShape.rectangle,
-                                color: Colors.red,
-                                borderRadius:
-                                    BorderRadius.all(Radius.circular(3))),
-                          ),
-                          child: SizedBox(
-                            height: 150,
-                            child: Card(
-                                elevation: 3,
-                                child: Center(
-                                    child: Text(
-                                        snapshot.data![index]['content']))),
-                          ),
-                        );
-                      },
+                    return Scrollbar(
+                      controller: scrollController2,
+                      thumbVisibility: true,
+                      interactive: true,
+                      child: ListView.builder(
+                        controller: scrollController2,
+                        itemCount: snapshot.data!.length,
+                        itemBuilder: (context, index) {
+                          return Dismissible(
+                            onDismissed: (direction) {
+                              if (direction == DismissDirection.endToStart) {
+                                deleteLocalRecord(snapshot.data![index]['id']);
+                              } else if (direction ==
+                                  DismissDirection.startToEnd) {
+                                deleteLocalAndGlobalRecord(
+                                    snapshot.data![index]['id']);
+                              }
+                            },
+                            key: ValueKey(snapshot.data![index]['id']),
+                            direction: DismissDirection.horizontal,
+                            background: Container(
+                              decoration: const BoxDecoration(
+                                  shape: BoxShape.rectangle,
+                                  color: Colors.red,
+                                  borderRadius:
+                                      BorderRadius.all(Radius.circular(3))),
+                            ),
+                            child: SizedBox(
+                                height: 200,
+                                child: Padding(
+                                    padding: const EdgeInsets.all(4),
+                                    child: Card(
+                                        margin: const EdgeInsets.only(
+                                            left: 5,
+                                            right: 10,
+                                            bottom: 5,
+                                            top: 5),
+                                        elevation: 5,
+                                        child: snapshot.data![index]['content']
+                                                    .length >
+                                                250
+                                            ? Scrollbar(
+                                                controller: scrollController,
+                                                interactive: true,
+                                                thumbVisibility: true,
+                                                child: ListView(
+                                                  controller: scrollController,
+                                                  children: [
+                                                    Center(
+                                                        child: Padding(
+                                                      padding:
+                                                          const EdgeInsets.all(
+                                                              10.0),
+                                                      child: Text(
+                                                          snapshot.data![index]
+                                                              ['content']),
+                                                    ))
+                                                  ],
+                                                ),
+                                              )
+                                            : Center(
+                                                child: Padding(
+                                                padding:
+                                                    const EdgeInsets.all(10.0),
+                                                child: Text(snapshot
+                                                    .data![index]['content']),
+                                              ))))),
+                          );
+                        },
+                      ),
                     );
                   }
                   return const Center(child: CircularProgressIndicator());
@@ -262,8 +371,27 @@ class ListOfCitates extends StatelessWidget {
   }
 }
 
-class TextArea extends StatelessWidget {
+class TextArea extends StatefulWidget {
   const TextArea({super.key});
+
+  @override
+  State<TextArea> createState() => _TextAreaState();
+}
+
+class _TextAreaState extends State<TextArea> {
+  late TextEditingController controller;
+
+  @override
+  void initState() {
+    super.initState();
+    controller = TextEditingController();
+  }
+
+  @override
+  void dispose() {
+    controller.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -310,13 +438,14 @@ class TextArea extends StatelessWidget {
               ),
             ),
           ),
-          const Expanded(
+          Expanded(
             flex: 4,
             child: Padding(
-              padding: EdgeInsets.only(left: 15, right: 15),
+              padding: const EdgeInsets.only(left: 15, right: 15),
               child: TextField(
+                controller: controller,
                 textAlignVertical: TextAlignVertical.top,
-                decoration: InputDecoration(
+                decoration: const InputDecoration(
                     border: OutlineInputBorder(
                         borderRadius: BorderRadius.all(Radius.circular(2)))),
                 maxLines: null,
@@ -376,12 +505,13 @@ class TextArea extends StatelessWidget {
                                       elevation: 3,
                                     );
                                   },
-                                );
+                                ).then((value) => setState(() {}));
                               },
                               child: const Text('Получить')),
                         ),
                       ),
-                      const Icon(Icons.arrow_downward),
+                      if (MediaQuery.of(context).size.width < 700)
+                        const Icon(Icons.arrow_downward),
                       SizedBox(
                         width: 150,
                         child: Padding(
@@ -393,7 +523,10 @@ class TextArea extends StatelessWidget {
                                       RoundedRectangleBorder(
                                           borderRadius: BorderRadius.all(
                                               Radius.circular(3))))),
-                              onPressed: () {},
+                              onPressed: () {
+                                postData(controller.text);
+                                controller.clear();
+                              },
                               child: const Text('Отправить')),
                         ),
                       ),
@@ -545,6 +678,15 @@ Future<String> getJsonData() async {
   return data;
 }
 
+Future<void> postData(String content) async {
+  post(Uri.http('127.0.0.1:8000', '/api/prophecy'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Basic YWRtaW46YWRtaW4='
+      },
+      body: jsonEncode({"content": content}));
+}
+
 Future<void> deleteLocalAndGlobalRecord(int id) async {
   final dbFactory = getIdbFactory();
   final db = await dbFactory?.open('my_database');
@@ -576,17 +718,13 @@ Future<void> deleteLocalRecord(int id) async {
 }
 
 Future<void> initializeDatabase() async {
-  // Название базы данных
   const dbName = 'my_database';
 
-  // Версия базы данных
   const dbVersion = 1;
 
-  // Открываем или создаем базу данных
-  final dbFactory = getIdbFactory(); // Получаем фабрику для IndexedDB
+  final dbFactory = getIdbFactory();
   await dbFactory?.open(dbName, version: dbVersion,
       onUpgradeNeeded: (VersionChangeEvent event) {
-    // Создаем хранилище, если база данных обновляется
     final db = event.database;
     if (!db.objectStoreNames.contains('my_store')) {
       db.createObjectStore('my_store');
@@ -616,7 +754,7 @@ Future<List<Map<String, dynamic>>> getAllRecords() async {
 
   await txn.completed;
 
-  return records.map((e) => e as Map<String, dynamic>).toList();
+  return records.reversed.map((e) => e as Map<String, dynamic>).toList();
 }
 
 Future<void> deleteDatabase() async {
