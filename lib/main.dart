@@ -23,9 +23,12 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp.router(
       theme: ThemeData(
+        scaffoldBackgroundColor: Color(0xFFE0E0E0),
           scrollbarTheme: const ScrollbarThemeData(
         thumbColor: WidgetStatePropertyAll(Colors.greenAccent),
-      )),
+      ),
+        
+      ),
       debugShowCheckedModeBanner: false,
       routerConfig: _router,
     );
@@ -42,16 +45,30 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
+  int count = 0;
+  List<Map<String, dynamic>> records = [];
   late ScrollController scrollController;
   late ScrollController scrollController2;
+
+  setCount() async {
+    count = (await getAllRecords()).length;
+    setState(() {});
+  }
+
+  loadRecords() async {
+    records = await getAllRecords();
+    setState(() {});
+  }
 
   @override
   initState() {
     super.initState();
     scrollController = ScrollController();
     scrollController2 = ScrollController();
+    setCount();
+    loadRecords();
   }
-  
+
   @override
   void dispose() {
     scrollController.dispose();
@@ -75,12 +92,12 @@ class _MyHomePageState extends State<MyHomePage> {
                     const SizedBox(
                       height: 70,
                     ),
-                    const Padding(
-                      padding: EdgeInsets.only(right: 15.0, left: 5),
+                    Padding(
+                      padding: const EdgeInsets.only(right: 15.0, left: 5),
                       child: Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Row(
+                            const Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
                                 Icon(Icons.keyboard_double_arrow_left),
@@ -90,7 +107,9 @@ class _MyHomePageState extends State<MyHomePage> {
                                 ),
                               ],
                             ),
-                            Row(
+                            Text('Count:  $count',
+                                style: const TextStyle(fontSize: 10)),
+                            const Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
                                 Text(
@@ -105,101 +124,113 @@ class _MyHomePageState extends State<MyHomePage> {
                     Expanded(
                       flex: 5,
                       child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 5.0),
-                        child: FutureBuilder(
-                          future: getAllRecords(),
-                          builder: (context, snapshot) {
-                            if (snapshot.hasData) {
-                              return Scrollbar(
-                                controller: scrollController2,
-                                thumbVisibility: true,
-                                interactive: true,
-                                child: ListView.builder(
-                                  controller: scrollController2,
-                                  itemCount: snapshot.data!.length,
-                                  itemBuilder: (context, index) {
-                                    return Dismissible(
-                                      onDismissed: (direction) {
-                                        if (direction ==
-                                            DismissDirection.endToStart) {
-                                          deleteLocalRecord(
-                                              snapshot.data![index]['id']);
-                                        } else if (direction ==
-                                            DismissDirection.startToEnd) {
-                                          deleteLocalAndGlobalRecord(
-                                              snapshot.data![index]['id']);
-                                        }
-                                      },
-                                      key:
-                                          ValueKey(snapshot.data![index]['id']),
-                                      direction: DismissDirection.horizontal,
-                                      background: Container(
-                                        decoration: const BoxDecoration(
-                                            shape: BoxShape.rectangle,
-                                            color: Colors.red,
-                                            borderRadius: BorderRadius.all(
-                                                Radius.circular(3))),
-                                      ),
-                                      child: SizedBox(
-                                          height: 200,
-                                          child: Card(
-                                              margin: const EdgeInsets.only(
-                                                  left: 5,
-                                                  right: 10,
-                                                  bottom: 5,
-                                                  top: 5),
-                                              elevation: 5,
-                                              child: snapshot
-                                                          .data![index]
-                                                              ['content']
-                                                          .length >
-                                                      250
-                                                  ? Scrollbar(
-                                                      controller:
-                                                          scrollController,
-                                                      interactive: true,
-                                                      thumbVisibility: true,
-                                                      child: ListView(
-                                                        controller:
-                                                            scrollController,
-                                                        children: [
-                                                          Center(
-                                                              child:
-                                                                  Padding(
-                                                            padding:
-                                                                const EdgeInsets
-                                                                    .all(
-                                                                    10.0),
-                                                            child: Text(snapshot
-                                                                        .data![
-                                                                    index][
-                                                                'content']),
-                                                          ))
-                                                        ],
-                                                      ),
-                                                    )
-                                                  : Center(
-                                                      child: Padding(
-                                                      padding:
-                                                          const EdgeInsets
-                                                              .all(10.0),
-                                                      child: Text(snapshot
-                                                              .data![index]
-                                                          ['content']),
-                                                    )))),
-                                    );
+                          padding: const EdgeInsets.symmetric(horizontal: 5.0),
+                          child: Scrollbar(
+                            controller: scrollController2,
+                            thumbVisibility: true,
+                            interactive: true,
+                            child: ListView.builder(
+                              controller: scrollController2,
+                              itemCount: records.length,
+                              itemBuilder: (context, index) {
+                                return Dismissible(
+                                  onDismissed: (direction) {
+                                    if (direction ==
+                                        DismissDirection.endToStart) {
+                                      deleteLocalRecord(records[index]['id']);
+                                      setState(() {
+                                        count--;
+                                      });
+                                    } else if (direction ==
+                                        DismissDirection.startToEnd) {
+                                      deleteLocalAndGlobalRecord(
+                                          records[index]['id']);
+                                      setState(() {
+                                        count--;
+                                      });
+                                    }
+                                    setState(() {
+                                      records.removeAt(index);
+                                    });
                                   },
-                                ),
-                              );
-                            }
-                            return const Center(
-                                child: CircularProgressIndicator());
-                          },
+                                  key: ValueKey(records[index]['id']),
+                                  direction: DismissDirection.horizontal,
+                                  background: Container(
+                                    decoration: const BoxDecoration(
+                                        shape: BoxShape.rectangle,
+                                        color: Colors.red,
+                                        borderRadius: BorderRadius.all(
+                                            Radius.circular(3))),
+                                  ),
+                                  child: SizedBox(
+                                      height: 200,
+                                      child: Card(color: Colors.white,
+                                          margin: const EdgeInsets.only(
+                                              left: 5,
+                                              right: 10,
+                                              bottom: 5,
+                                              top: 5),
+                                          elevation: 5,
+                                          child: records[index]['content']
+                                                      .length >
+                                                  250
+                                              ? Scrollbar(
+                                                  controller: scrollController,
+                                                  interactive: true,
+                                                  thumbVisibility: true,
+                                                  child: ListView(
+                                                    controller:
+                                                        scrollController,
+                                                    children: [
+                                                      Center(
+                                                          child: Padding(
+                                                        padding:
+                                                            const EdgeInsets
+                                                                .all(10.0),
+                                                        child: Text(
+                                                            records[index]
+                                                                ['content']),
+                                                      ))
+                                                    ],
+                                                  ),
+                                                )
+                                              : Center(
+                                                  child: Padding(
+                                                  padding: const EdgeInsets.all(
+                                                      10.0),
+                                                  child: Text(records[index]
+                                                      ['content']),
+                                                )))),
+                                );
+                              },
+                            ),
+                          )),
+                    ),
+                    SizedBox(
+                      height: 90,
+                      child: Align(
+                        alignment: Alignment.bottomCenter,
+                        child: Padding(
+                          padding: const EdgeInsets.only(bottom: 20.0),
+                          child: ElevatedButton(
+                            style: const ButtonStyle(
+                                elevation: WidgetStatePropertyAll(3),
+                                shape: WidgetStatePropertyAll(
+                                  RoundedRectangleBorder(
+                                    borderRadius:
+                                        BorderRadius.all(Radius.circular(3)),
+                                  ),
+                                )),
+                            child: const Icon(Icons.update),
+                            onPressed: () async {
+                              count = (await getAllRecords()).length;
+                              setState(() {
+                                records;
+                              });
+                            },
+                          ),
                         ),
                       ),
-                    ),
-                    const SizedBox(
-                      height: 90,
                     )
                   ],
                 ),
@@ -230,14 +261,28 @@ class ListOfCitates extends StatefulWidget {
 }
 
 class _ListOfCitatesState extends State<ListOfCitates> {
+  int count = 0;
+  List<Map<String, dynamic>> records = [];
   late ScrollController scrollController;
   late ScrollController scrollController2;
+
+  setCount() async {
+    count = (await getAllRecords()).length;
+    setState(() {});
+  }
+
+  loadRecords() async {
+    records = await getAllRecords();
+    setState(() {});
+  }
 
   @override
   void initState() {
     super.initState();
     scrollController = ScrollController();
     scrollController2 = ScrollController();
+    setCount();
+    loadRecords();
   }
 
   @override
@@ -253,7 +298,7 @@ class _ListOfCitatesState extends State<ListOfCitates> {
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          const Padding(
+          Padding(
             padding: EdgeInsets.symmetric(horizontal: 20.0),
             child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -268,6 +313,7 @@ class _ListOfCitatesState extends State<ListOfCitates> {
                       ),
                     ],
                   ),
+                  Text('Count:  $count', style: const TextStyle(fontSize: 10)),
                   Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
@@ -283,87 +329,80 @@ class _ListOfCitatesState extends State<ListOfCitates> {
           Expanded(
             flex: 5,
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 5.0),
-              child: FutureBuilder(
-                future: getAllRecords(),
-                builder: (context, snapshot) {
-                  if (snapshot.hasData) {
-                    return Scrollbar(
-                      controller: scrollController2,
-                      thumbVisibility: true,
-                      interactive: true,
-                      child: ListView.builder(
-                        controller: scrollController2,
-                        itemCount: snapshot.data!.length,
-                        itemBuilder: (context, index) {
-                          return Dismissible(
-                            onDismissed: (direction) {
-                              if (direction == DismissDirection.endToStart) {
-                                deleteLocalRecord(snapshot.data![index]['id']);
-                              } else if (direction ==
-                                  DismissDirection.startToEnd) {
-                                deleteLocalAndGlobalRecord(
-                                    snapshot.data![index]['id']);
-                              }
-                            },
-                            key: ValueKey(snapshot.data![index]['id']),
-                            direction: DismissDirection.horizontal,
-                            background: Container(
-                              decoration: const BoxDecoration(
-                                  shape: BoxShape.rectangle,
-                                  color: Colors.red,
-                                  borderRadius:
-                                      BorderRadius.all(Radius.circular(3))),
-                            ),
-                            child: SizedBox(
-                                height: 200,
-                                child: Padding(
-                                    padding: const EdgeInsets.all(4),
-                                    child: Card(
-                                        margin: const EdgeInsets.only(
-                                            left: 5,
-                                            right: 10,
-                                            bottom: 5,
-                                            top: 5),
-                                        elevation: 5,
-                                        child: snapshot.data![index]['content']
-                                                    .length >
-                                                250
-                                            ? Scrollbar(
-                                                controller: scrollController,
-                                                interactive: true,
-                                                thumbVisibility: true,
-                                                child: ListView(
-                                                  controller: scrollController,
-                                                  children: [
-                                                    Center(
-                                                        child: Padding(
-                                                      padding:
-                                                          const EdgeInsets.all(
-                                                              10.0),
-                                                      child: Text(
-                                                          snapshot.data![index]
-                                                              ['content']),
-                                                    ))
-                                                  ],
-                                                ),
-                                              )
-                                            : Center(
-                                                child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 5.0),
+                child: Scrollbar(
+                  controller: scrollController2,
+                  thumbVisibility: true,
+                  interactive: true,
+                  child: ListView.builder(
+                    controller: scrollController2,
+                    itemCount: records.length,
+                    itemBuilder: (context, index) {
+                      return Dismissible(
+                        onDismissed: (direction) {
+                          if (direction == DismissDirection.endToStart) {
+                            deleteLocalRecord(records[index]['id']);
+                            setState(() {
+                              count--;
+                            });
+                          } else if (direction == DismissDirection.startToEnd) {
+                            deleteLocalAndGlobalRecord(
+                              records[index]['id'],
+                            );
+                            setState(() {
+                              count--;
+                            });
+                          }
+                          setState(() {
+                            records.removeAt(index);
+                          });
+                        },
+                        key: ValueKey(records[index]['id']),
+                        direction: DismissDirection.horizontal,
+                        background: Container(
+                          decoration: const BoxDecoration(
+                              shape: BoxShape.rectangle,
+                              color: Colors.red,
+                              borderRadius:
+                                  BorderRadius.all(Radius.circular(3))),
+                        ),
+                        child: SizedBox(
+                            height: 200,
+                            child: Padding(
+                                padding: const EdgeInsets.all(4),
+                                child: Card(color: Colors.white,
+                                    margin: const EdgeInsets.only(
+                                        left: 5, right: 10, bottom: 5, top: 5),
+                                    elevation: 5,
+                                    child: records[index]['content'].length >
+                                            250
+                                        ? Scrollbar(
+                                            controller: scrollController,
+                                            interactive: true,
+                                            thumbVisibility: true,
+                                            child: ListView(
+                                              controller: scrollController,
+                                              children: [
+                                                Center(
+                                                    child: Padding(
+                                                  padding: const EdgeInsets.all(
+                                                      10.0),
+                                                  child: Text(records[index]
+                                                      ['content']),
+                                                ))
+                                              ],
+                                            ),
+                                          )
+                                        : Center(
+                                            child: Padding(
                                                 padding:
                                                     const EdgeInsets.all(10.0),
-                                                child: Text(snapshot
-                                                    .data![index]['content']),
-                                              ))))),
-                          );
-                        },
-                      ),
-                    );
-                  }
-                  return const Center(child: CircularProgressIndicator());
-                },
-              ),
-            ),
+                                                child: Text(records[index]
+                                                    ['content'])))))),
+                      );
+                    },
+                  ),
+                )),
           ),
         ],
       ),
@@ -443,11 +482,18 @@ class _TextAreaState extends State<TextArea> {
             child: Padding(
               padding: const EdgeInsets.only(left: 15, right: 15),
               child: TextField(
+                 
                 controller: controller,
                 textAlignVertical: TextAlignVertical.top,
                 decoration: const InputDecoration(
                     border: OutlineInputBorder(
-                        borderRadius: BorderRadius.all(Radius.circular(2)))),
+                        borderRadius: BorderRadius.all(Radius.circular(2))),
+                    filled: true,
+                    fillColor: Colors.white,
+                    hintStyle: TextStyle(color: Colors.grey),
+                    hintText: 'Введите цитату и пошлите, куда следует',
+                    contentPadding: EdgeInsets.all(15),
+    ),
                 maxLines: null,
                 expands: true,
               ),
@@ -505,13 +551,13 @@ class _TextAreaState extends State<TextArea> {
                                       elevation: 3,
                                     );
                                   },
-                                ).then((value) => setState(() {}));
+                                );
                               },
                               child: const Text('Получить')),
                         ),
                       ),
                       if (MediaQuery.of(context).size.width < 700)
-                        const Icon(Icons.arrow_downward),
+                        const Icon(Icons.keyboard_arrow_down_rounded),
                       SizedBox(
                         width: 150,
                         child: Padding(
