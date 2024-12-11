@@ -24,10 +24,17 @@ class MyApp extends StatelessWidget {
     return MaterialApp.router(
       theme: ThemeData(
         scaffoldBackgroundColor: Color(0xFFE0E0E0),
-          scrollbarTheme: const ScrollbarThemeData(
-        thumbColor: WidgetStatePropertyAll(Colors.greenAccent),
-      ),
-        
+        scrollbarTheme: ScrollbarThemeData(
+          thumbColor: WidgetStatePropertyAll(Colors.blue),
+        ),
+        elevatedButtonTheme: ElevatedButtonThemeData(
+            style: ElevatedButton.styleFrom(
+          textStyle: TextStyle(
+            foreground: Paint()..color = Colors.black,
+          ),
+          iconColor: Colors.black,
+          disabledBackgroundColor: Colors.grey,
+        )),
       ),
       debugShowCheckedModeBanner: false,
       routerConfig: _router,
@@ -47,8 +54,13 @@ class MyHomePage extends StatefulWidget {
 class _MyHomePageState extends State<MyHomePage> {
   int count = 0;
   List<Map<String, dynamic>> records = [];
-  late ScrollController scrollController;
-  late ScrollController scrollController2;
+  bool backendStatus = false;
+  int charCount = 0;
+
+  Future<void> getStatus() async {
+    backendStatus = await getBackendStatus();
+    setState(() {});
+  }
 
   setCount() async {
     count = (await getAllRecords()).length;
@@ -56,34 +68,30 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   loadRecords() async {
-    records = await getAllRecords();
+    records = (await getAllRecords()).reversed.toList();
+    await setRecordsFromDB(records);
     setState(() {});
   }
 
   @override
   initState() {
     super.initState();
-    scrollController = ScrollController();
-    scrollController2 = ScrollController();
-    setCount();
-    loadRecords();
-  }
-
-  @override
-  void dispose() {
-    scrollController.dispose();
-    scrollController2.dispose();
-    super.dispose();
+    // getStatus().then((_) {
+    //   if (backendStatus) {
+    //     setCount();
+    //     loadRecords();
+    //   }
+    // });
   }
 
   @override
   Widget build(BuildContext context) {
     return LayoutBuilder(builder: (context, constraints) {
-      if (constraints.maxWidth > 700) {
+      if (constraints.maxWidth > 750) {
         return Scaffold(
           body: Row(
             children: [
-              const Expanded(
+              Expanded(
                 child: TextArea(),
               ),
               Expanded(
@@ -93,28 +101,49 @@ class _MyHomePageState extends State<MyHomePage> {
                       height: 70,
                     ),
                     Padding(
-                      padding: const EdgeInsets.only(right: 15.0, left: 5),
+                      padding: const EdgeInsets.only(right: 30.0, left: 5),
                       child: Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            const Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(Icons.keyboard_double_arrow_left),
-                                Text(
-                                  'Swipe to delete locally',
-                                  style: TextStyle(fontSize: 10),
-                                ),
-                              ],
+                            Flexible(
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(Icons.keyboard_double_arrow_left),
+                                  Padding(
+                                    padding: EdgeInsets.only(left: 5, right: 5),
+                                    child: SizedBox(
+                                      width: constraints.maxWidth * 0.16,
+                                      child: Text(
+                                        'Смахнуть для удаления локально',
+                                        style: TextStyle(
+                                            overflow: TextOverflow.ellipsis,
+                                            fontSize: 10),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
-                            Text('Count:  $count',
-                                style: const TextStyle(fontSize: 10)),
-                            const Row(
+                            Text('$count',
+                                style: const TextStyle(
+                                  fontSize: 10,
+                                )),
+                            Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                Text(
-                                  'Swipe also to delete globally',
-                                  style: TextStyle(fontSize: 10),
+                                Padding(
+                                  padding: EdgeInsets.only(left: 5, right: 5),
+                                  child: SizedBox(
+                                    width: constraints.maxWidth * 0.16,
+                                    child: Text(
+                                      textAlign: TextAlign.right,
+                                      'Смахнуть для удаления глобально',
+                                      style: TextStyle(
+                                          overflow: TextOverflow.ellipsis,
+                                          fontSize: 10),
+                                    ),
+                                  ),
                                 ),
                                 Icon(Icons.keyboard_double_arrow_right),
                               ],
@@ -125,86 +154,241 @@ class _MyHomePageState extends State<MyHomePage> {
                       flex: 5,
                       child: Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 5.0),
-                          child: Scrollbar(
-                            controller: scrollController2,
-                            thumbVisibility: true,
-                            interactive: true,
-                            child: ListView.builder(
-                              controller: scrollController2,
-                              itemCount: records.length,
-                              itemBuilder: (context, index) {
-                                return Dismissible(
-                                  onDismissed: (direction) {
-                                    if (direction ==
-                                        DismissDirection.endToStart) {
-                                      deleteLocalRecord(records[index]['id']);
-                                      setState(() {
-                                        count--;
-                                      });
-                                    } else if (direction ==
-                                        DismissDirection.startToEnd) {
-                                      deleteLocalAndGlobalRecord(
-                                          records[index]['id']);
-                                      setState(() {
-                                        count--;
-                                      });
-                                    }
-                                    setState(() {
-                                      records.removeAt(index);
-                                    });
-                                  },
-                                  key: ValueKey(records[index]['id']),
-                                  direction: DismissDirection.horizontal,
-                                  background: Container(
-                                    decoration: const BoxDecoration(
-                                        shape: BoxShape.rectangle,
-                                        color: Colors.red,
-                                        borderRadius: BorderRadius.all(
-                                            Radius.circular(3))),
-                                  ),
-                                  child: SizedBox(
-                                      height: 200,
-                                      child: Card(color: Colors.white,
-                                          margin: const EdgeInsets.only(
-                                              left: 5,
-                                              right: 10,
-                                              bottom: 5,
-                                              top: 5),
-                                          elevation: 5,
-                                          child: records[index]['content']
-                                                      .length >
-                                                  250
-                                              ? Scrollbar(
-                                                  controller: scrollController,
-                                                  interactive: true,
-                                                  thumbVisibility: true,
-                                                  child: ListView(
-                                                    controller:
-                                                        scrollController,
+                          child: records.isNotEmpty
+                              ? Builder(builder: (context) {
+                                  ScrollController scrollController =
+                                      ScrollController();
+                                  return Scrollbar(
+                                    controller: scrollController,
+                                    thumbVisibility: true,
+                                    interactive: true,
+                                    child: ListView.builder(
+                                      controller: scrollController,
+                                      itemCount: records.length,
+                                      itemBuilder: (context, index) {
+                                        TextEditingController controller =
+                                            TextEditingController(
+                                                text: records[index]
+                                                    ['content']);
+                                        return GestureDetector(
+                                          onDoubleTap: () {
+                                            showDialog(
+                                              context: context,
+                                              builder: (context) => AlertDialog(
+                                                actions: [
+                                                  Row(
+                                                    mainAxisAlignment:
+                                                        MainAxisAlignment
+                                                            .spaceBetween,
                                                     children: [
-                                                      Center(
-                                                          child: Padding(
-                                                        padding:
-                                                            const EdgeInsets
-                                                                .all(10.0),
-                                                        child: Text(
-                                                            records[index]
-                                                                ['content']),
-                                                      ))
+                                                      Text(
+                                                        'Количество символов X: 15 < X < 1500',
+                                                        style: TextStyle(
+                                                          fontSize: 10,
+                                                          color:
+                                                              Color(0xFFFF0000),
+                                                        ),
+                                                      ),
+                                                      ElevatedButton(
+                                                        style: ButtonStyle(
+                                                            backgroundColor:
+                                                                WidgetStatePropertyAll(
+                                                                    Color(
+                                                                        0xFFFF722F)),
+                                                            elevation:
+                                                                WidgetStatePropertyAll(
+                                                                    3),
+                                                            shape:
+                                                                WidgetStatePropertyAll(
+                                                              RoundedRectangleBorder(
+                                                                borderRadius: BorderRadius
+                                                                    .all(Radius
+                                                                        .circular(
+                                                                            3)),
+                                                              ),
+                                                            )),
+                                                        onPressed: () {
+                                                          if (controller
+                                                                      .text !=
+                                                                  '' &&
+                                                              controller.text
+                                                                      .length >
+                                                                  15 &&
+                                                              controller.text
+                                                                      .length <
+                                                                  1500) {
+                                                            putContent(
+                                                                records[index]
+                                                                    ['id'],
+                                                                controller
+                                                                    .text);
+                                                            if (context
+                                                                .mounted) {
+                                                              Navigator.pop(
+                                                                  context);
+                                                            }
+                                                          }
+                                                        },
+                                                        child: Text('ok'),
+                                                      )
                                                     ],
-                                                  ),
-                                                )
-                                              : Center(
+                                                  )
+                                                ],
+                                                shape: RoundedRectangleBorder(
+                                                  borderRadius:
+                                                      BorderRadius.all(
+                                                          Radius.circular(3)),
+                                                ),
+                                                contentPadding: EdgeInsets.zero,
+                                                content: SizedBox(
+                                                  height: 400,
+                                                  width: 600,
                                                   child: Padding(
-                                                  padding: const EdgeInsets.all(
-                                                      10.0),
-                                                  child: Text(records[index]
-                                                      ['content']),
-                                                )))),
-                                );
-                              },
-                            ),
-                          )),
+                                                    padding:
+                                                        const EdgeInsets.all(
+                                                            10.0),
+                                                    child: TextField(
+                                                      decoration:
+                                                          InputDecoration(
+                                                              border:
+                                                                  OutlineInputBorder(
+                                                        borderSide:
+                                                            BorderSide.none,
+                                                      )),
+                                                      controller: controller,
+                                                      maxLines: 40,
+                                                      autofocus: true,
+                                                    ),
+                                                  ),
+                                                ),
+                                              ),
+                                            );
+                                          },
+                                          child: Dismissible(
+                                            onDismissed: (direction) {
+                                              if (direction ==
+                                                  DismissDirection.endToStart) {
+                                                deleteLocalRecord(
+                                                    records[index]['id']);
+                                                setState(() {
+                                                  count--;
+                                                });
+                                              } else if (direction ==
+                                                  DismissDirection.startToEnd) {
+                                                deleteLocalAndGlobalRecord(
+                                                    records[index]['id']);
+                                                setState(() {
+                                                  count--;
+                                                });
+                                              }
+                                              setState(() {
+                                                records.removeAt(index);
+                                              });
+                                            },
+                                            key: ValueKey(records[index]['id']),
+                                            direction:
+                                                DismissDirection.horizontal,
+                                            background: Container(
+                                              decoration: const BoxDecoration(
+                                                  shape: BoxShape.rectangle,
+                                                  color: Colors.red,
+                                                  borderRadius:
+                                                      BorderRadius.all(
+                                                          Radius.circular(3))),
+                                            ),
+                                            child: SizedBox(
+                                                height: 200,
+                                                child: Padding(
+                                                  padding:
+                                                      const EdgeInsets.only(
+                                                          right: 15.0),
+                                                  child: Card(
+                                                      color: Colors.white,
+                                                      margin:
+                                                          const EdgeInsets.only(
+                                                              left: 5,
+                                                              right: 10,
+                                                              bottom: 5,
+                                                              top: 2),
+                                                      elevation: 5,
+                                                      child: records[index][
+                                                                      'content']
+                                                                  .length >
+                                                              250
+                                                          ? Builder(builder:
+                                                              (context) {
+                                                              ScrollController
+                                                                  scrollController2 =
+                                                                  ScrollController();
+                                                              return Scrollbar(
+                                                                controller:
+                                                                    scrollController2,
+                                                                interactive:
+                                                                    true,
+                                                                thumbVisibility:
+                                                                    true,
+                                                                child: ListView(
+                                                                  controller:
+                                                                      scrollController2,
+                                                                  children: [
+                                                                    Center(
+                                                                        child:
+                                                                            Padding(
+                                                                      padding: const EdgeInsets
+                                                                          .all(
+                                                                          10.0),
+                                                                      child: Text(
+                                                                          records[index]
+                                                                              [
+                                                                              'content']),
+                                                                    ))
+                                                                  ],
+                                                                ),
+                                                              );
+                                                            })
+                                                          : Center(
+                                                              child: Padding(
+                                                              padding:
+                                                                  const EdgeInsets
+                                                                      .all(
+                                                                      10.0),
+                                                              child: Text(records[
+                                                                      index]
+                                                                  ['content']),
+                                                            ))),
+                                                )),
+                                          ),
+                                        );
+                                      },
+                                    ),
+                                  );
+                                })
+                              : Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Center(
+                                      child: Text(
+                                        'Нет записей',
+                                        style: TextStyle(
+                                          fontSize: 20,
+                                          color: Colors.black,
+                                        ),
+                                      ),
+                                    )
+                                  ],
+                                )),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.only(top: 5.0),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            'Двойной клик, что отредактировать карточку',
+                            style: TextStyle(fontSize: 10),
+                          )
+                        ],
+                      ),
                     ),
                     SizedBox(
                       height: 90,
@@ -212,22 +396,49 @@ class _MyHomePageState extends State<MyHomePage> {
                         alignment: Alignment.bottomCenter,
                         child: Padding(
                           padding: const EdgeInsets.only(bottom: 20.0),
-                          child: ElevatedButton(
-                            style: const ButtonStyle(
-                                elevation: WidgetStatePropertyAll(3),
-                                shape: WidgetStatePropertyAll(
-                                  RoundedRectangleBorder(
-                                    borderRadius:
-                                        BorderRadius.all(Radius.circular(3)),
-                                  ),
-                                )),
-                            child: const Icon(Icons.update),
-                            onPressed: () async {
-                              count = (await getAllRecords()).length;
-                              setState(() {
-                                records;
-                              });
-                            },
+                          child: SizedBox(
+                            height: 30,
+                            child: ElevatedButton(
+                              style: const ButtonStyle(
+                                  backgroundColor:
+                                      WidgetStatePropertyAll(Color(0xFF9F93BF)),
+                                  elevation: WidgetStatePropertyAll(3),
+                                  shape: WidgetStatePropertyAll(
+                                    RoundedRectangleBorder(
+                                      borderRadius:
+                                          BorderRadius.all(Radius.circular(3)),
+                                    ),
+                                  )),
+                              child: const ImageIcon(
+                                  AssetImage('assets/icons/reload.png'),
+                                  size: 18),
+                              onPressed: () {
+                                getStatus().then(
+                                  (_) async {
+                                    if (backendStatus) {
+                                      count = (await getAllRecords()).length;
+                                      records = (await getAllRecords())
+                                          .reversed
+                                          .toList();
+                                      setState(() {
+                                        count;
+                                        records;
+                                      });
+                                    } else {
+                                      if (context.mounted) {
+                                        ScaffoldMessenger.of(context)
+                                            .showSnackBar(
+                                          const SnackBar(
+                                            content: Text(
+                                                'Нет соединения с базой данных'),
+                                          ),
+                                        );
+                                      }
+                                    }
+                                  },
+                                );
+                              },
+                            ),
                           ),
                         ),
                       ),
@@ -241,7 +452,7 @@ class _MyHomePageState extends State<MyHomePage> {
       } else {
         return PageView(
           scrollDirection: Axis.vertical,
-          children: const [
+          children: [
             TextArea(),
             ListOfCitates(),
           ],
@@ -263,8 +474,12 @@ class ListOfCitates extends StatefulWidget {
 class _ListOfCitatesState extends State<ListOfCitates> {
   int count = 0;
   List<Map<String, dynamic>> records = [];
-  late ScrollController scrollController;
-  late ScrollController scrollController2;
+  bool backendStatus = false;
+
+  Future<void> getStatus() async {
+    backendStatus = await getBackendStatus();
+    setState(() {});
+  }
 
   setCount() async {
     count = (await getAllRecords()).length;
@@ -272,26 +487,18 @@ class _ListOfCitatesState extends State<ListOfCitates> {
   }
 
   loadRecords() async {
-    records = await getAllRecords();
+    records = (await getAllRecords()).reversed.toList();
     setState(() {});
   }
 
   @override
   void initState() {
     super.initState();
-    scrollController = ScrollController();
-    scrollController2 = ScrollController();
-    setCount();
     loadRecords();
+    setCount();
   }
 
-  @override
-  dispose() {
-    scrollController.dispose();
-    scrollController2.dispose();
-    super.dispose();
-  }
-
+  
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -299,7 +506,7 @@ class _ListOfCitatesState extends State<ListOfCitates> {
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           Padding(
-            padding: EdgeInsets.symmetric(horizontal: 20.0),
+            padding: EdgeInsets.only(left: 20.0, right: 25, top: 5),
             child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -308,102 +515,248 @@ class _ListOfCitatesState extends State<ListOfCitates> {
                     children: [
                       Icon(Icons.keyboard_double_arrow_left),
                       Text(
-                        'Swipe to delete locally',
-                        style: TextStyle(fontSize: 10),
+                        'Смахнуть для удаления локально',
+                        style: TextStyle(
+                          fontSize: 10,
+                        ),
                       ),
                     ],
                   ),
-                  Text('Count:  $count', style: const TextStyle(fontSize: 10)),
+                  Text('$count',
+                      style: const TextStyle(
+                        fontSize: 10,
+                      )),
                   Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Text(
-                        'Swipe also to delete globally',
-                        style: TextStyle(fontSize: 10),
+                        'Смахнуть для удаления глобально',
+                        style: TextStyle(
+                          fontSize: 10,
+                        ),
                       ),
                       Icon(Icons.keyboard_double_arrow_right),
                     ],
                   ),
                 ]),
           ),
+          SizedBox(
+            height: 3,
+          ),
           Expanded(
             flex: 5,
             child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 5.0),
-                child: Scrollbar(
-                  controller: scrollController2,
-                  thumbVisibility: true,
-                  interactive: true,
-                  child: ListView.builder(
-                    controller: scrollController2,
-                    itemCount: records.length,
-                    itemBuilder: (context, index) {
-                      return Dismissible(
-                        onDismissed: (direction) {
-                          if (direction == DismissDirection.endToStart) {
-                            deleteLocalRecord(records[index]['id']);
-                            setState(() {
-                              count--;
-                            });
-                          } else if (direction == DismissDirection.startToEnd) {
-                            deleteLocalAndGlobalRecord(
-                              records[index]['id'],
-                            );
-                            setState(() {
-                              count--;
-                            });
-                          }
-                          setState(() {
-                            records.removeAt(index);
-                          });
-                        },
-                        key: ValueKey(records[index]['id']),
-                        direction: DismissDirection.horizontal,
-                        background: Container(
-                          decoration: const BoxDecoration(
-                              shape: BoxShape.rectangle,
-                              color: Colors.red,
-                              borderRadius:
-                                  BorderRadius.all(Radius.circular(3))),
-                        ),
-                        child: SizedBox(
-                            height: 200,
-                            child: Padding(
-                                padding: const EdgeInsets.all(4),
-                                child: Card(color: Colors.white,
-                                    margin: const EdgeInsets.only(
-                                        left: 5, right: 10, bottom: 5, top: 5),
-                                    elevation: 5,
-                                    child: records[index]['content'].length >
-                                            250
-                                        ? Scrollbar(
-                                            controller: scrollController,
-                                            interactive: true,
-                                            thumbVisibility: true,
-                                            child: ListView(
-                                              controller: scrollController,
-                                              children: [
-                                                Center(
-                                                    child: Padding(
-                                                  padding: const EdgeInsets.all(
-                                                      10.0),
-                                                  child: Text(records[index]
-                                                      ['content']),
-                                                ))
-                                              ],
+                child: records.isNotEmpty
+                    ? Builder(builder: (context) {
+                        ScrollController scrollController = ScrollController();
+                        return Scrollbar(
+                          controller: scrollController,
+                          thumbVisibility: true,
+                          interactive: true,
+                          child: ListView.builder(
+                            controller: scrollController,
+                            itemCount: records.length,
+                            itemBuilder: (context, index) {
+                              TextEditingController controller =
+                                  TextEditingController(
+                                      text: records[index]['content']);
+                              return GestureDetector(
+                                onDoubleTap: () {
+                                  showDialog(
+                                    context: context,
+                                    builder: (context) => AlertDialog(
+                                      actions: [
+                                        Row(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.spaceBetween,
+                                          children: [
+                                            Text(
+                                              'Количество символов X: 15 < X < 1500',
+                                              style: TextStyle(
+                                                fontSize: 10,
+                                                color: Color(0xFFFF0000),
+                                              ),
                                             ),
-                                          )
-                                        : Center(
-                                            child: Padding(
-                                                padding:
-                                                    const EdgeInsets.all(10.0),
-                                                child: Text(records[index]
-                                                    ['content'])))))),
-                      );
-                    },
-                  ),
-                )),
+                                            ElevatedButton(
+                                              style: ButtonStyle(
+                                                  backgroundColor:
+                                                      WidgetStatePropertyAll(
+                                                          Color(0xFFFF722F)),
+                                                  elevation:
+                                                      WidgetStatePropertyAll(3),
+                                                  shape: WidgetStatePropertyAll(
+                                                    RoundedRectangleBorder(
+                                                      borderRadius:
+                                                          BorderRadius.all(
+                                                              Radius.circular(
+                                                                  3)),
+                                                    ),
+                                                  )),
+                                              onPressed: () {
+                                                if (controller.text != '' &&
+                                                    controller.text.length >
+                                                        15 &&
+                                                    controller.text.length <
+                                                        1500) {
+                                                  putContent(
+                                                      records[index]['id'],
+                                                      controller.text);
+                                                  if (context.mounted) {
+                                                    Navigator.pop(context);
+                                                  }
+                                                }
+                                              },
+                                              child: Text('ok'),
+                                            )
+                                          ],
+                                        )
+                                      ],
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(3),
+                                      ),
+                                      contentPadding: EdgeInsets.zero,
+                                      content: SizedBox(
+                                        height: 300,
+                                        width: 600,
+                                        child: Padding(
+                                          padding: const EdgeInsets.all(10.0),
+                                          child: TextField(
+                                            decoration: InputDecoration(
+                                                border: OutlineInputBorder(
+                                                    borderSide: BorderSide.none,
+                                                    borderRadius:
+                                                        BorderRadius.all(
+                                                            Radius.circular(
+                                                                3)))),
+                                            controller: controller,
+                                            maxLines: 30,
+                                            autofocus: true,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  );
+                                },
+                                child: Dismissible(
+                                  onDismissed: (direction) {
+                                    if (direction ==
+                                        DismissDirection.endToStart) {
+                                      deleteLocalRecord(records[index]['id']);
+                                      setState(() {
+                                        count--;
+                                      });
+                                    } else if (direction ==
+                                        DismissDirection.startToEnd) {
+                                      deleteLocalAndGlobalRecord(
+                                        records[index]['id'],
+                                      );
+                                      setState(() {
+                                        count--;
+                                      });
+                                    }
+                                    setState(() {
+                                      records.removeAt(index);
+                                    });
+                                  },
+                                  key: ValueKey(records[index]['id']),
+                                  direction: DismissDirection.horizontal,
+                                  background: Container(
+                                    decoration: const BoxDecoration(
+                                        shape: BoxShape.rectangle,
+                                        color: Colors.red,
+                                        borderRadius: BorderRadius.all(
+                                            Radius.circular(3))),
+                                  ),
+                                  child: SizedBox(
+                                      height: 200,
+                                      child: Padding(
+                                          padding: const EdgeInsets.only(
+                                              top: 2,
+                                              bottom: 4,
+                                              right: 15,
+                                              left: 15),
+                                          child: Card(
+                                              color: Colors.white,
+                                              margin: const EdgeInsets.only(
+                                                  left: 5,
+                                                  right: 10,
+                                                  bottom: 5,
+                                                  top: 5),
+                                              elevation: 5,
+                                              child: records[index]['content']
+                                                          .length >
+                                                      250
+                                                  ? Builder(builder: (context) {
+                                                      ScrollController
+                                                          scrollController2 =
+                                                          ScrollController();
+                                                      return Scrollbar(
+                                                        controller:
+                                                            scrollController2,
+                                                        interactive: true,
+                                                        thumbVisibility: true,
+                                                        child: ListView(
+                                                          controller:
+                                                              scrollController2,
+                                                          children: [
+                                                            Center(
+                                                                child: Padding(
+                                                              padding:
+                                                                  const EdgeInsets
+                                                                      .all(
+                                                                      10.0),
+                                                              child: Text(records[
+                                                                      index]
+                                                                  ['content']),
+                                                            ))
+                                                          ],
+                                                        ),
+                                                      );
+                                                    })
+                                                  : Center(
+                                                      child: Padding(
+                                                          padding:
+                                                              const EdgeInsets
+                                                                  .all(10.0),
+                                                          child: Text(records[
+                                                                  index]
+                                                              ['content'])))))),
+                                ),
+                              );
+                            },
+                          ),
+                        );
+                      })
+                    : Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Center(
+                            child: Padding(
+                                padding: const EdgeInsets.all(10.0),
+                                child: Text(
+                                  'Нет записей',
+                                  style: TextStyle(
+                                    fontSize: 20,
+                                    color: Colors.black,
+                                  ),
+                                )),
+                          )
+                        ],
+                      )),
           ),
+          SizedBox(
+            height: 2,
+          ),
+          Padding(
+            padding: const EdgeInsets.only(top: 5, bottom: 5),
+            child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+              Text('Двойной клик, чтобы отредактировать карточку',
+                  style: TextStyle(
+                    fontSize: 10,
+                  ))
+            ]),
+          )
         ],
       ),
     );
@@ -419,6 +772,12 @@ class TextArea extends StatefulWidget {
 
 class _TextAreaState extends State<TextArea> {
   late TextEditingController controller;
+  bool backendStatus = false;
+
+  Future<void> getStatus() async {
+    backendStatus = await getBackendStatus();
+    setState(() {});
+  }
 
   @override
   void initState() {
@@ -460,18 +819,21 @@ class _TextAreaState extends State<TextArea> {
                         onPressed: null,
                         child: Text('Домой')),
                     ElevatedButton(
-                        style: const ButtonStyle(
-                            elevation: WidgetStatePropertyAll(3),
-                            shape: WidgetStatePropertyAll(
-                              RoundedRectangleBorder(
-                                borderRadius:
-                                    BorderRadius.all(Radius.circular(3)),
-                              ),
-                            )),
+                        style: ButtonStyle(
+                          elevation: WidgetStatePropertyAll(3),
+                          shape: WidgetStatePropertyAll(
+                            RoundedRectangleBorder(
+                              borderRadius:
+                                  BorderRadius.all(Radius.circular(3)),
+                            ),
+                          ),
+                          backgroundColor:
+                              WidgetStatePropertyAll(Color(0xFFFEF67F)),
+                        ),
                         onPressed: () {
                           context.go('/about');
                         },
-                        child: const Text('О нас'))
+                        child: const Text('О нас')),
                   ],
                 ),
               ),
@@ -482,18 +844,21 @@ class _TextAreaState extends State<TextArea> {
             child: Padding(
               padding: const EdgeInsets.only(left: 15, right: 15),
               child: TextField(
-                 
                 controller: controller,
                 textAlignVertical: TextAlignVertical.top,
-                decoration: const InputDecoration(
-                    border: OutlineInputBorder(
-                        borderRadius: BorderRadius.all(Radius.circular(2))),
-                    filled: true,
-                    fillColor: Colors.white,
-                    hintStyle: TextStyle(color: Colors.grey),
-                    hintText: 'Введите цитату и пошлите, куда следует',
-                    contentPadding: EdgeInsets.all(15),
-    ),
+                decoration: InputDecoration(
+                  border: OutlineInputBorder(
+                      borderRadius: BorderRadius.all(Radius.circular(2))),
+                  filled: true,
+                  fillColor: Colors.white,
+                  hintStyle: TextStyle(color: Colors.grey),
+                  hintText: 'Введите цитату и пошлите, куда следует',
+                  helper: Text(
+                    'Количество символов X: 15 < X < 1500',
+                    style: TextStyle(fontSize: 10, color: Colors.red),
+                  ),
+                  contentPadding: EdgeInsets.all(15),
+                ),
                 maxLines: null,
                 expands: true,
               ),
@@ -515,7 +880,9 @@ class _TextAreaState extends State<TextArea> {
                           height: 50,
                           width: 150,
                           child: ElevatedButton(
-                              style: const ButtonStyle(
+                              style: ButtonStyle(
+                                  backgroundColor:
+                                      WidgetStatePropertyAll(Color(0xFF72BB53)),
                                   elevation: WidgetStatePropertyAll(3),
                                   shape: WidgetStatePropertyAll(
                                     RoundedRectangleBorder(
@@ -524,32 +891,67 @@ class _TextAreaState extends State<TextArea> {
                                     ),
                                   )),
                               onPressed: () {
-                                showDialog(
-                                  context: context,
-                                  builder: (context) {
-                                    return AlertDialog(
-                                      shape: const RoundedRectangleBorder(
-                                          borderRadius: BorderRadius.all(
-                                              Radius.circular(3))),
-                                      content: FutureBuilder(
-                                        future: getJsonData(),
-                                        builder: (context, snapshot) {
-                                          if (snapshot.connectionState ==
-                                              ConnectionState.waiting) {
-                                            return const CircularProgressIndicator();
-                                          } else if (snapshot.hasError) {
-                                            return const Text(
-                                                'Нет новых цитат');
-                                          }
-                                          return Padding(
-                                            padding: const EdgeInsets.all(8.0),
-                                            child: Text(jsonDecode(
-                                                snapshot.data!)['content']),
-                                          );
-                                        },
-                                      ),
-                                      elevation: 3,
-                                    );
+                                getStatus().then(
+                                  (_) {
+                                    if (backendStatus) {
+                                      if (context.mounted) {
+                                        showDialog(
+                                          context: context,
+                                          builder: (context) {
+                                            return AlertDialog(
+                                              shape:
+                                                  const RoundedRectangleBorder(
+                                                      borderRadius:
+                                                          BorderRadius.all(
+                                                              Radius.circular(
+                                                                  3))),
+                                              content: FutureBuilder(
+                                                future: getJsonData(),
+                                                builder: (context, snapshot) {
+                                                  if (snapshot
+                                                          .connectionState ==
+                                                      ConnectionState.waiting) {
+                                                    return SizedBox(
+                                                        height: 30,
+                                                        child: Center(
+                                                            child:
+                                                                const CircularProgressIndicator()));
+                                                  } else if (snapshot
+                                                      .hasError) {
+                                                    return SizedBox(
+                                                      height: 30,
+                                                      child: Center(
+                                                        child: const Text(
+                                                            'Нет новых цитат'),
+                                                      ),
+                                                    );
+                                                  }
+                                                  return Padding(
+                                                    padding:
+                                                        const EdgeInsets.all(
+                                                            8.0),
+                                                    child: Text(jsonDecode(
+                                                        snapshot
+                                                            .data!)['content']),
+                                                  );
+                                                },
+                                              ),
+                                              elevation: 3,
+                                            );
+                                          },
+                                        );
+                                      }
+                                    } else {
+                                      if (context.mounted) {
+                                        ScaffoldMessenger.of(context)
+                                            .showSnackBar(
+                                          const SnackBar(
+                                            content: Text(
+                                                'Нет соединения с базой данных'),
+                                          ),
+                                        );
+                                      }
+                                    }
                                   },
                                 );
                               },
@@ -564,16 +966,77 @@ class _TextAreaState extends State<TextArea> {
                           padding: const EdgeInsets.only(right: 15.0),
                           child: ElevatedButton(
                               style: const ButtonStyle(
+                                  backgroundColor:
+                                      WidgetStatePropertyAll(Color(0xFFF06E9C)),
                                   elevation: WidgetStatePropertyAll(3),
                                   shape: WidgetStatePropertyAll(
                                       RoundedRectangleBorder(
                                           borderRadius: BorderRadius.all(
                                               Radius.circular(3))))),
                               onPressed: () {
-                                postData(controller.text);
-                                controller.clear();
+                                getStatus().then(
+                                  (_) {
+                                    if (backendStatus) {
+                                      if (controller.text != '' &&
+                                          controller.text.length > 15 &&
+                                          controller.text.length < 1500) {
+                                        if (context.mounted) {
+                                          showDialog<void>(
+                                            context: context,
+                                            builder:
+                                                (BuildContext dialogContext) {
+                                              return AlertDialog(
+                                                shape:
+                                                    const RoundedRectangleBorder(
+                                                        borderRadius:
+                                                            BorderRadius.all(
+                                                                Radius.circular(
+                                                                    3))),
+                                                content: FutureBuilder(
+                                                  future: postData(controller),
+                                                  builder: (context, snapshot) {
+                                                    if (snapshot.hasData) {
+                                                      String data = utf8.decode(
+                                                          snapshot
+                                                              .data!.bodyBytes);
+                                                      Map<String, dynamic>
+                                                          answer =
+                                                          jsonDecode(data);
+                                                      WidgetsBinding.instance
+                                                          .addPostFrameCallback(
+                                                              (_) {
+                                                        controller.clear();
+                                                      });
+                                                      return Text(
+                                                          '${answer["message"]}');
+                                                    }
+                                                    return SizedBox(
+                                                        height: 30,
+                                                        child: Center(
+                                                            child:
+                                                                const CircularProgressIndicator()));
+                                                  },
+                                                ),
+                                              );
+                                            },
+                                          );
+                                        }
+                                      }
+                                    } else {
+                                      if (context.mounted) {
+                                        ScaffoldMessenger.of(context)
+                                            .showSnackBar(
+                                          const SnackBar(
+                                            content: Text(
+                                                'Нет соединения с базой данных'),
+                                          ),
+                                        );
+                                      }
+                                    }
+                                  },
+                                );
                               },
-                              child: const Text('Отправить')),
+                              child: const Text('Отослать')),
                         ),
                       ),
                     ],
@@ -608,6 +1071,8 @@ class MapView extends StatelessWidget {
                   children: [
                     ElevatedButton(
                         style: const ButtonStyle(
+                            backgroundColor:
+                                WidgetStatePropertyAll(Color(0xFFFEF67F)),
                             elevation: WidgetStatePropertyAll(3),
                             shape:
                                 WidgetStatePropertyAll(RoundedRectangleBorder(
@@ -724,13 +1189,14 @@ Future<String> getJsonData() async {
   return data;
 }
 
-Future<void> postData(String content) async {
-  post(Uri.http('127.0.0.1:8000', '/api/prophecy'),
+Future<Response> postData(TextEditingController controller) async {
+  Response response = await post(Uri.http('127.0.0.1:8000', '/api/prophecy'),
       headers: {
         'Content-Type': 'application/json',
         'Authorization': 'Basic YWRtaW46YWRtaW4='
       },
-      body: jsonEncode({"content": content}));
+      body: jsonEncode({"content": controller.text}));
+  return response;
 }
 
 Future<void> deleteLocalAndGlobalRecord(int id) async {
@@ -763,6 +1229,25 @@ Future<void> deleteLocalRecord(int id) async {
   );
 }
 
+Future<void> putContent(int id, String content) async {
+  final dbFactory = getIdbFactory();
+  final db = await dbFactory?.open('my_database');
+  final txn = db?.transaction('my_store', 'readwrite');
+  final store = txn?.objectStore('my_store');
+
+  await store?.put({"id": id, "content": content}, id);
+  await txn?.completed;
+
+  put(
+    Uri.http('127.0.0.1:8000', '/api/prophecy/$id'),
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": "Basic YWRtaW46YWRtaW4="
+    },
+    body: jsonEncode({"content": content}),
+  );
+}
+
 Future<void> initializeDatabase() async {
   const dbName = 'my_database';
 
@@ -789,21 +1274,35 @@ Future<void> addData(int id, Map<String, dynamic> value) async {
 }
 
 Future<List<Map<String, dynamic>>> getAllRecords() async {
-  final dbFactory = getIdbFactory();
-
-  final db = await dbFactory!.open('my_database');
-
-  final txn = db.transaction('my_store', 'readonly');
-  final store = txn.objectStore('my_store');
-
-  final records = await store.getAll();
-
-  await txn.completed;
-
-  return records.reversed.map((e) => e as Map<String, dynamic>).toList();
+  Response response = await get(Uri.http('127.0.0.1:8000', '/api/prophecy/all'),
+      headers: {'Authorization': 'Basic YWRtaW46YWRtaW4='});
+  String data = utf8.decode(response.bodyBytes);
+  List<dynamic> records = jsonDecode(data);
+  return records.map((e) => e as Map<String, dynamic>).toList();
 }
 
-Future<void> deleteDatabase() async {
+Future<void> setRecordsFromDB(List<Map<String, dynamic>> records) async {
   final dbFactory = getIdbFactory();
-  await dbFactory?.deleteDatabase('my_database');
+  final db = await dbFactory!.open('my_database');
+
+  final txn = db.transaction('my_store', 'readwrite');
+  final store = txn.objectStore('my_store');
+  for (Map<String, dynamic> record in records) {
+    await store.put(record, record['id']);
+  }
+  await txn.completed;
+}
+
+Future<bool> getBackendStatus() async {
+  try {
+    Response response = await get(Uri.http('127.0.0.1:8000', '/api/health'),
+        headers: {'Authorization': 'Basic YWRtaW46YWRtaW4='});
+    if (response.statusCode == 200) {
+      return true;
+    } else {
+      return false;
+    }
+  } catch (e) {
+    return false;
+  }
 }

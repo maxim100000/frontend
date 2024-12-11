@@ -14,5 +14,6 @@ class Assets {
   static const String fontsRobotoRegular = 'assets/fonts/Roboto-Regular.ttf';
   static const String fontsRobotoThin = 'assets/fonts/Roboto-Thin.ttf';
   static const String fontsRobotoThinItalic = 'assets/fonts/Roboto-ThinItalic.ttf';
+  static const String iconsReload = 'assets/icons/reload.png';
 
 }
