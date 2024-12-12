@@ -9,6 +9,7 @@ import 'package:flutter_map_cancellable_tile_provider/flutter_map_cancellable_ti
 import 'package:http/http.dart';
 import 'package:idb_shim/idb_browser.dart';
 
+
 void main() async {
   usePathUrlStrategy();
   WidgetsFlutterBinding.ensureInitialized();
@@ -1178,7 +1179,7 @@ final _router = GoRouter(
 );
 
 Future<String> getJsonData() async {
-  Response response = await get(Uri.http('127.0.0.1:8000', '/api/prophecy'),
+  Response response = await get(Uri.https('backend-fi2g.onrender.com', '/api/prophecy'),
       headers: {
         'Content-Type': 'application/json',
         'Authorization': 'Basic YWRtaW46YWRtaW4='
@@ -1190,7 +1191,7 @@ Future<String> getJsonData() async {
 }
 
 Future<Response> postData(TextEditingController controller) async {
-  Response response = await post(Uri.http('127.0.0.1:8000', '/api/prophecy'),
+  Response response = await post(Uri.https('backend-fi2g.onrender.com', '/api/prophecy'),
       headers: {
         'Content-Type': 'application/json',
         'Authorization': 'Basic YWRtaW46YWRtaW4='
@@ -1209,7 +1210,7 @@ Future<void> deleteLocalAndGlobalRecord(int id) async {
   await txn?.completed;
 
   await delete(
-    Uri.http('127.0.0.1:8000', '/api/prophecy/$id'),
+    Uri.https('backend-fi2g.onrender.com', '/api/prophecy/$id'),
     headers: {'Authorization': 'Basic YWRtaW46YWRtaW4='},
   );
 }
@@ -1224,7 +1225,7 @@ Future<void> deleteLocalRecord(int id) async {
   await txn?.completed;
 
   await patch(
-    Uri.http('127.0.0.1:8000', '/api/prophecy/$id'),
+    Uri.https('backend-fi2g.onrender.com', '/api/prophecy/$id'),
     headers: {'Authorization': 'Basic YWRtaW46YWRtaW4='},
   );
 }
@@ -1239,7 +1240,7 @@ Future<void> putContent(int id, String content) async {
   await txn?.completed;
 
   put(
-    Uri.http('127.0.0.1:8000', '/api/prophecy/$id'),
+    Uri.https('backend-fi2g.onrender.com', '/api/prophecy/$id'),
     headers: {
       "Content-Type": "application/json",
       "Authorization": "Basic YWRtaW46YWRtaW4="
@@ -1274,7 +1275,7 @@ Future<void> addData(int id, Map<String, dynamic> value) async {
 }
 
 Future<List<Map<String, dynamic>>> getAllRecords() async {
-  Response response = await get(Uri.http('127.0.0.1:8000', '/api/prophecy/all'),
+  Response response = await get(Uri.https('backend-fi2g.onrender.com', '/api/prophecy/all'),
       headers: {'Authorization': 'Basic YWRtaW46YWRtaW4='});
   String data = utf8.decode(response.bodyBytes);
   List<dynamic> records = jsonDecode(data);
@@ -1295,7 +1296,7 @@ Future<void> setRecordsFromDB(List<Map<String, dynamic>> records) async {
 
 Future<bool> getBackendStatus() async {
   try {
-    Response response = await get(Uri.http('127.0.0.1:8000', '/api/health'),
+    Response response = await get(Uri.https('backend-fi2g.onrender.com', '/api/health'),
         headers: {'Authorization': 'Basic YWRtaW46YWRtaW4='});
     if (response.statusCode == 200) {
       return true;
