@@ -420,7 +420,7 @@ class _MyHomePageState extends State<MyHomePage> {
                                       count = (await getAllRecords()).length;
                                       records = (await getAllRecords())
                                           .reversed
-                                          .toList();
+                                          .toList() ;
                                       setState(() {
                                         count;
                                         records;
